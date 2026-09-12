@@ -28,6 +28,186 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;34.0.0'
 
+      - name: Create Android project files
+        shell: bash
+        run: |
+          mkdir -p app/src/main/java/com/folio/designcommunity
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = 'Folio'
+          include ':app'
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.folio.designcommunity'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.folio.designcommunity'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="Folio"
+                  android:icon="@drawable/ic_folio"
+                  android:theme="@style/AppTheme"
+                  android:allowBackup="false"
+                  android:supportsRtl="true"
+                  android:usesCleartextTraffic="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#274CE8</item>
+                  <item name="android:windowBackground">#FFFFFF</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > app/src/main/res/drawable/ic_folio.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path
+                  android:fillColor="#274CE8"
+                  android:pathData="M0,0H108V108H0Z" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M33,27H77V39H46V49H70V61H46V81H33Z" />
+          </vector>
+          EOF
+
+          cat > app/src/main/java/com/folio/designcommunity/MainActivity.java <<'EOF'
+          package com.folio.designcommunity;
+
+          import android.app.Activity;
+          import android.content.ActivityNotFoundException;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.view.Gravity;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import android.widget.Toast;
+
+          public class MainActivity extends Activity {
+              private static final String URL =
+                  "https://folio-design-community.muhammedshaheervp36.chatgpt.site";
+
+              @Override
+              public void onCreate(Bundle state) {
+                  super.onCreate(state);
+
+                  LinearLayout layout = new LinearLayout(this);
+                  layout.setOrientation(LinearLayout.VERTICAL);
+                  layout.setGravity(Gravity.CENTER);
+                  int padding = (int) (24 * getResources().getDisplayMetrics().density);
+                  layout.setPadding(padding, padding, padding, padding);
+                  layout.setBackgroundColor(Color.WHITE);
+
+                  TextView title = new TextView(this);
+                  title.setText("Folio");
+                  title.setTextSize(40);
+                  title.setTextColor(Color.rgb(39, 76, 232));
+                  layout.addView(title);
+
+                  Button button = new Button(this);
+                  button.setText("Open Folio");
+                  button.setAllCaps(false);
+                  button.setOnClickListener(v -> openFolio());
+                  layout.addView(button);
+
+                  TextView note = new TextView(this);
+                  note.setText("Internet and a browser are required.\nSign in with your ChatGPT account.");
+                  note.setTextSize(16);
+                  note.setGravity(Gravity.CENTER);
+                  layout.addView(note);
+
+                  setContentView(layout);
+                  if (state == null) {
+                      openFolio();
+                  }
+              }
+
+              private void openFolio() {
+                  Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(URL));
+                  Bundle extras = new Bundle();
+                  extras.putBinder("android.support.customtabs.extra.SESSION", null);
+                  intent.putExtras(extras);
+                  intent.putExtra(
+                      "android.support.customtabs.extra.TOOLBAR_COLOR",
+                      Color.rgb(39, 76, 232)
+                  );
+
+                  try {
+                      startActivity(intent);
+                  } catch (ActivityNotFoundException e) {
+                      Toast.makeText(
+                          this,
+                          "Install or enable a browser, then try again.",
+                          Toast.LENGTH_LONG
+                      ).show();
+                  }
+              }
+          }
+          EOF
+
       - name: Build APK
         run: gradle --no-daemon :app:assembleDebug
 
